@@ -1,0 +1,29 @@
+---
+namespace: scorpia
+name: artnet
+version: 0.1.0
+readme: README.md
+
+authors:
+- Tyler Ward
+
+description: Collection of ansible commands for managing Art-Net nodes
+
+# Either a single license or a list of licenses for content inside of a collection. Ansible Galaxy currently only
+# accepts L(SPDX,https://spdx.org/licenses/) licenses. This key is mutually exclusive with 'license_file'
+license:
+  - MIT
+
+# A list of tags you want to associate with the collection for indexing/searching. A tag name has the same character
+# requirements as 'namespace' and 'name'
+tags:
+  - art-net
+
+dependencies: {}
+
+repository: https://github.com/Tyler-Ward/ansible-collection-artnet
+documentation: https://github.com/Tyler-Ward/ansible-collection-artnet
+homepage: https://github.com/Tyler-Ward/ansible-collection-artnet
+issues: https://github.com/Tyler-Ward/ansible-collection-artnet/issues
+
+build_ignore: []
