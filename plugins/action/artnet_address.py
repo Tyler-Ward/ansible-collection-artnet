@@ -42,8 +42,8 @@ class ActionModule(ActionBase):
                 bind_index = 1,
                 short_name = None,
                 long_name = None,
-                output_universe = None,
-                input_universe = None
+                output_universe = [],
+                input_universe = []
                 ):
             packet = bytearray()
 
@@ -62,7 +62,7 @@ class ActionModule(ActionBase):
             packet.append(14)
 
             # 5 NetSwitch
-            if net:
+            if net != None:
                 packet.append(net|0x80)
             else:
                 packet.append(0x0f)
@@ -79,19 +79,20 @@ class ActionModule(ActionBase):
                 packet.append(0x00)
 
             # 9 SwIn [4]
-            packet.append(0x0f)
-            packet.append(0x0f)
-            packet.append(0x0f)
-            packet.append(0x0f)
+            packet.append(0x7f)
+            packet.append(0x7f)
+            packet.append(0x7f)
+            packet.append(0x7f)
 
             # 10 SwOut [4]
-            packet.append(0x0f)
-            packet.append(0x0f)
-            packet.append(0x0f)
-            packet.append(0x0f)
+            for portid in range(4):
+                if len(output_universe)>portid:
+                    packet.append(output_universe[portid]|0x80)
+                else:
+                    packet.append(0x7f)
 
             # 11 SubSwitch
-            if sub_net:
+            if sub_net != None:
                 packet.append(sub_net|0x80)
             else:
                 packet.append(0x0f)
@@ -177,7 +178,14 @@ class ActionModule(ActionBase):
         if "sub_net" in self._task.args:
             config["sub_net"]=int(self._task.args["sub_net"])
 
+        if "output_universe" in self._task.args:
+            if type(self._task.args["output_universe"]) != list:
+                config["output_universe"] = [int(self._task.args["output_universe"])]
+            else:
+                config["output_universe"] = [int(x) for x in self._task.args["output_universe"]]
+
         address = task_vars["ansible_host"]
+        print(config)
         
         #get current settings
 
@@ -190,8 +198,17 @@ class ActionModule(ActionBase):
         toset = dict()
 
         for item in config:
-            if settings[item]!=config[item]:
-                toset[item]=config[item]
+            # for arrays check each item
+            if type(config[item])==list:
+                different=0
+                for x in range(len(config[item])):
+                    if settings[item][x]!=config[item][x]:
+                        different=1
+                if different:
+                    toset[item]=config[item]
+            else:
+                if settings[item]!=config[item]:
+                    toset[item]=config[item]
 
         if len(toset) == 0:
             return ({"changed":False})
@@ -202,10 +219,18 @@ class ActionModule(ActionBase):
         settings = extract_artpollreply(data[0])
 
         failed = 0
+        msg = ""
         for item in toset:
-            if settings[item]!=toset[item]:
-                msg += "Missmatch on {} {}!={}\n".format(item,settings[item],toset[item])
-                failed += 1
+            # for arrays check each item
+            if type(toset[item])==list:
+                for x in range(len(toset[item])):
+                    if settings[item][x]!=toset[item][x]:
+                        msg += "Missmatch on {}-{} {}!={}\n".format(item,x,settings[item][x],toset[item][x])
+                        failed += 1
+            else:
+                if settings[item]!=toset[item]:
+                    msg += "Missmatch on {} {}!={}\n".format(item,settings[item],toset[item])
+                    failed += 1
         
         if failed:
             return({"failed":True,"msg":msg})
